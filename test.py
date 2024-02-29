@@ -26,10 +26,6 @@ containers = client.containers.list()
 for container in containers:
     # Get container stats
     name = container.name
-    if 'SizeRw' in container.attrs:
-        size = container['SizeRw']
-    else:
-        size = None
     stats = container.stats(stream=False)
     cpu_percentage = stats['cpu_stats']['cpu_usage']['total_usage']
     total_cpu = stats['cpu_stats']['system_cpu_usage']
@@ -40,6 +36,11 @@ for container in containers:
     except:
         memory_limit = None
     container_info = container.attrs
+    network_info = container_info["NetworkSettings"]["Networks"]
+    keys = list(network_info.keys())
+    for key in keys:
+        print(network_info[key]["IPAddress"])
+    break
     ipv4 = container_info['NetworkSettings']['IPAddress']
     if ipv4 == "":
         ipv4 = None
@@ -72,21 +73,7 @@ for container in containers:
     if memory_limit is not None:
         data_memory[0]["fields"]["limit"] = memory_limit
     sendData(data_memory)
-    
-    data_disk = [
-        {
-            "measurement": "docker_monitor_disk",
-            "tags": {
-                "name": name
-            },
-            "fields": {
-            },
-            "time": timeNow
-        }
-    ]
-    if size is not None:
-        data_memory[0]["fields"]["value"] = size
-        sendData(data_disk)
+
     
     data_ip = [
         {
@@ -100,6 +87,8 @@ for container in containers:
         }
     ]
     if ipv4 is not None:
-        data_memory[0]["fields"]["value"] = ipv4
+        data_memory[0]["fields"]["value"] = str(ipv4)
         sendData(data_ip)
+        
+    print(data_ip)
     
